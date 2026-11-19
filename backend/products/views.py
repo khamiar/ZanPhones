@@ -1,20 +1,46 @@
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import AllowAny
 
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
+from .models import Product
+from .serializers import ProductSerializer
+
+from accounts.permissions import IsAdminOrManager
 
 
-class ProductViewSet(ReadOnlyModelViewSet):
+class ProductViewSet(ModelViewSet):
 
-    queryset = Product.objects.filter(
-        is_active=True
-    ).select_related("category").prefetch_related("images")
-
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+    def get_permissions(self):
 
-class CategoryViewSet(ReadOnlyModelViewSet):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]
 
-    queryset = Category.objects.all()
+        return [IsAdminOrManager()]
 
-    serializer_class = CategorySerializer
+    def get_queryset(self):
+
+        queryset = Product.objects.filter(
+            is_active=True
+        )
+
+        category_id = self.request.query_params.get(
+            "category"
+        )
+
+        search = self.request.query_params.get(
+            "search"
+        )
+
+        if category_id:
+            queryset = queryset.filter(
+                category_id=category_id
+            )
+
+        if search:
+            queryset = queryset.filter(
+                name__icontains=search
+            )
+
+        return queryset

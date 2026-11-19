@@ -15,3 +15,12 @@ class User(AbstractUser):
         choices=Role.choices,
         default=Role.STAFF
     )
+
+    branch = models.ForeignKey(
+    "branches.Branch",
+    on_delete=models.PROTECT,
+    null=True,
+    blank=True,
+    related_name="users"
+)
+
